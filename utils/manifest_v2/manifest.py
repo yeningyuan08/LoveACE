@@ -147,7 +147,7 @@ class ArtifactChecksums(BaseModel):
 
 
 class ReleaseArtifact(BaseModel):
-    type: Literal["apk", "exe", "msix", "dmg", "zip", "testflight", "web"]
+    type: Literal["apk", "exe", "msix", "dmg", "zip", "appimage", "testflight", "web"]
     url: str
     arch: Optional[str] = None
     size: Optional[int] = Field(default=None, ge=0)
