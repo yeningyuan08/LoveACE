@@ -38,7 +38,7 @@ DOWNLOAD_PAGE_V2_KEY = "loveace/download_page_v2.html"
 FAVICON_KEY = "loveace/favicon.png"
 DOWNLOAD_ASSET_PREFIX = "loveace/assets"
 LOCAL_SEMESTER_FILE = Path(__file__).parent / "semesters.json"
-NATIVE_ARTIFACT_TYPES = {"apk", "exe", "msix", "dmg", "zip"}
+NATIVE_ARTIFACT_TYPES = {"apk", "exe", "msix", "dmg", "zip", "appimage"}
 
 
 def dump_json(model) -> str:

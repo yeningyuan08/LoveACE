@@ -15,7 +15,7 @@ from pydantic import (
 
 
 PLATFORMS = ("android", "ios", "windows", "macos", "linux")
-NATIVE_ARTIFACT_TYPES = {"apk", "exe", "msix", "dmg", "zip"}
+NATIVE_ARTIFACT_TYPES = {"apk", "exe", "msix", "dmg", "zip", "appimage"}
 CANONICAL_RELEASE_HOST = "release.loveace.top"
 RELEASE_PATH_PREFIX = "/loveace/releases/"
 
