@@ -62,6 +62,8 @@ class _WinUIOTADialogState extends State<WinUIOTADialog> {
   String? _downloadError;
 
   bool get _isMacOS => widget.platform.toLowerCase() == 'macos';
+  bool get _isLinux => widget.platform.toLowerCase() == 'linux';
+  bool get _useBrowserDownload => _isMacOS || _isLinux;
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +113,17 @@ class _WinUIOTADialogState extends State<WinUIOTADialog> {
                   title: Text('macOS 手动安装'),
                   content: Text(
                     '下载 ZIP 后退出当前应用，解压并用新的 loveace.app 替换“应用程序”中的旧版本。',
+                  ),
+                  severity: InfoBarSeverity.info,
+                  isLong: true,
+                ),
+              ],
+              if (_isLinux) ...[
+                const SizedBox(height: 20),
+                const InfoBar(
+                  title: Text('Linux 手动安装'),
+                  content: Text(
+                    '下载 AppImage 后，在终端执行 chmod +x 赋予可执行权限，然后双击运行即可。',
                   ),
                   severity: InfoBarSeverity.info,
                   isLong: true,
@@ -187,7 +200,7 @@ class _WinUIOTADialogState extends State<WinUIOTADialog> {
                       widget.currentVersion,
                       widget.release.version,
                     );
-                    if (_isMacOS) {
+                    if (_useBrowserDownload) {
                       await _openInBrowser();
                     } else {
                       await _downloadAndLaunchWindowsInstaller();
@@ -197,14 +210,14 @@ class _WinUIOTADialogState extends State<WinUIOTADialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  _isMacOS
+                  _useBrowserDownload
                       ? FluentIcons.open_in_new_window
                       : FluentIcons.download,
                   size: 16,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _isMacOS
+                  _useBrowserDownload
                       ? '浏览器下载'
                       : _isDownloading
                       ? '下载中'

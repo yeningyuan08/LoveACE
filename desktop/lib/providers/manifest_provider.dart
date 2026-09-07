@@ -67,6 +67,7 @@ class ManifestProvider extends ChangeNotifier {
     final expectedType = switch (currentPlatform) {
       'windows' => 'exe',
       'macos' => 'zip',
+      'linux' => 'appimage',
       _ => null,
     };
     if (expectedType == null) return null;
