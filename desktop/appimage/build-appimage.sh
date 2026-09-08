@@ -82,6 +82,44 @@ mkdir -p "$APPDIR/usr/lib/loveace" \
 # Keep the Flutter bundle layout intact so $ORIGIN/lib and data/ resolve
 cp -a "$BUNDLE/." "$APPDIR/usr/lib/loveace/"
 
+# Bundle libsecret with its private dependency closure.
+# flutter_secure_storage_linux is linked into the main binary, so its
+# DT_NEEDED entry libsecret-1.so.0 must be resolvable at process start:
+# on systems without libsecret installed the whole AppImage would fail to
+# launch with a dynamic-linker error. Walk the transitive closure but skip
+# the glib/GTK stack and other base system libraries that any GTK3-capable
+# host is guaranteed to provide (bundling those would risk ABI mismatches
+# with the host GTK3 the app loads at runtime).
+echo "==> Bundling libsecret runtime closure"
+{
+  target_dir="$APPDIR/usr/lib/loveace/lib"
+  skip_re='^(ld-linux|libc\.so|libm\.so|libpthread\.so|libdl\.so|librt\.so|libresolv\.so|libutil\.so|libgcc_s\.so|libstdc\+\+\.so|libz\.so|liblzma\.so|libglib-2\.0\.so|libgio-2\.0\.so|libgobject-2\.0\.so|libgmodule-2\.0\.so|libffi\.so|libpcre2-8\.so|libselinux\.so|libmount\.so|libblkid\.so|libsystemd\.so|libudev\.so|libcap\.so|libcrypto\.so|libssl\.so)'
+  queue=(libsecret-1.so.0)
+  declare -A seen=()
+  while [ "${#queue[@]}" -gt 0 ]; do
+    lib="${queue[0]}"; queue=("${queue[@]:1}")
+    case "$lib" in
+      linux-vdso*|linux-gate*|/*) continue ;;
+    esac
+    [ -n "${seen[$lib]:-}" ] && continue
+    seen["$lib"]=1
+    if printf '%s' "$lib" | grep -Eq "$skip_re"; then continue; fi
+    # Note: no early-exit parsing here (awk exit / grep -m1 / head would
+    # SIGPIPE ldconfig under `set -o pipefail` and kill the script).
+    mapfile -t candidates < <(ldconfig -p 2>/dev/null | awk -v l="$lib" '$1==l {print $NF}')
+    src="${candidates[0]:-}"
+    if [ -z "$src" ] || [ ! -f "$src" ]; then
+      echo "    !! cannot resolve $lib via ldconfig, skipping" >&2
+      continue
+    fi
+    echo "    + $lib"
+    cp -L "$src" "$target_dir/$lib"
+    while read -r dep; do
+      queue+=("$dep")
+    done < <(ldd "$src" 2>/dev/null | awk '$2=="=>" && $3 ~ /^\// {print $1}')
+  done
+}
+
 cp "$DESKTOP_DIR/$ID.desktop" "$APPDIR/$ID.desktop"
 cp "$DESKTOP_DIR/$ID.desktop" "$APPDIR/usr/share/applications/"
 
@@ -95,6 +133,8 @@ cat > "$APPDIR/AppRun" <<'EOF'
 SELF=$(readlink -f "$0")
 HERE=$(dirname "$SELF")
 export APPDIR="$HERE"
+# Prefer the bundled libraries (e.g. the libsecret closure) over the host.
+export LD_LIBRARY_PATH="$HERE/usr/lib/loveace/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export GSETTINGS_SCHEMA_DIR="${GSETTINGS_SCHEMA_DIR:-$HERE/usr/share/glib-2.0/schemas}"
 exec "$HERE/usr/lib/loveace/loveace" "$@"
 EOF

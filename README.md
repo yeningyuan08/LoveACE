@@ -187,6 +187,18 @@ desktop/appimage/build-appimage.sh
 
 产物位于 `desktop/build/appimage/LoveACE-<版本>-x86_64.AppImage`，可直接 `./xxx.AppImage` 运行；发布到 `release.loveace.top` 的流程与 macOS/Windows 一致，`linux` 平台已由 `utils/manifest_v2` 支持。
 
+### Linux 运行时依赖
+
+AppImage 已内置 `libsecret` 及其加密依赖（含 gnutls/gcrypt 私有闭包），无需系统安装 libsecret 即可启动。仍需宿主环境提供：
+
+| 依赖 | 用途 | 缺失时的表现 |
+| --- | --- | --- |
+| GTK3 | 基础 UI 框架 | 无法启动 |
+| `xdg-desktop-portal` + 对应桌面 backend | CSV 导出保存对话框（file_picker） | 导出时报「无法打开保存文件对话框」 |
+| `xdg-utils`（`xdg-open`） | 导出后自动打开文件、跳转浏览器 | 文件仍会保存，仅不自动打开 |
+
+在 i3/sway 等最小化窗口管理器或容器环境中，请安装 `xdg-desktop-portal`、`xdg-desktop-portal-gtk`（或对应桌面 backend）与 `xdg-utils`。
+
 所有公开安装包固定通过 `https://release.loveace.top` 分发。
 
 ## 本地开发

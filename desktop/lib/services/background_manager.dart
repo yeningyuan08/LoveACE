@@ -31,30 +31,26 @@ class BackgroundManager {
   }
 
   /// Pick image from gallery
+  ///
+  /// Returns null when the user cancels. Errors are rethrown so the UI can
+  /// surface them — on minimal Linux environments the GTK file dialog
+  /// requires a working desktop session, and swallowing that failure made
+  /// the button appear to do nothing.
   Future<File?> pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
 
-      if (image == null) {
-        LoggerService.info('User cancelled image selection');
-        return null;
-      }
-
-      LoggerService.info('Image selected: ${image.path}');
-      return File(image.path);
-    } catch (e, stackTrace) {
-      LoggerService.error(
-        'Failed to pick image',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    if (image == null) {
+      LoggerService.info('User cancelled image selection');
       return null;
     }
+
+    LoggerService.info('Image selected: ${image.path}');
+    return File(image.path);
   }
 
   /// Save background image to app directory

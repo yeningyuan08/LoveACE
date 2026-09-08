@@ -39,12 +39,27 @@ class CsvExporter implements CsvExporterInterface {
     try {
       if (_isDesktop) {
         // 桌面端（Windows/macOS/Linux）：使用文件选择器让用户选择保存位置
-        String? outputPath = await FilePicker.saveFile(
-          dialogTitle: '保存CSV文件',
-          fileName: fileName,
-          type: FileType.custom,
-          allowedExtensions: ['csv'],
-        );
+        // Linux 上 file_picker 走 XDG Desktop Portal（DBus），精简 WM/容器
+        // 环境缺少 portal 组件时会抛异常，需要给出可操作的提示而非裸异常。
+        String? outputPath;
+        try {
+          outputPath = await FilePicker.saveFile(
+            dialogTitle: '保存CSV文件',
+            fileName: fileName,
+            type: FileType.custom,
+            allowedExtensions: ['csv'],
+          );
+        } catch (e) {
+          LoggerService.error('❌ 保存文件对话框打开失败', error: e);
+          if (Platform.isLinux) {
+            throw Exception(
+              '无法打开保存文件对话框：当前环境缺少 XDG Desktop Portal 组件'
+              '（需要 xdg-desktop-portal 及对应桌面的 backend）。'
+              '请安装相关组件后重试',
+            );
+          }
+          rethrow;
+        }
 
         if (outputPath != null) {
           final file = File(outputPath);
@@ -55,7 +70,11 @@ class CsvExporter implements CsvExporterInterface {
           try {
             await OpenFilex.open(file.path);
           } catch (e) {
-            LoggerService.warning('⚠️ 无法自动打开文件: $e');
+            LoggerService.warning(
+              Platform.isLinux
+                  ? '⚠️ 无法自动打开文件（缺少 xdg-utils/xdg-open?）: $e'
+                  : '⚠️ 无法自动打开文件: $e',
+            );
           }
         } else {
           throw Exception('用户取消了保存操作');
