@@ -132,9 +132,17 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      // Save credentials securely
+      // Save credentials securely. A storage failure must not fail the
+      // whole login: the network login already succeeded, so degrade to a
+      // warning (e.g. missing keyring daemon on minimal Linux desktops).
       LoggerService.info('🔐 Saving credentials...');
-      await credentials.saveSecurely();
+      try {
+        await credentials.saveSecurely();
+      } catch (e) {
+        LoggerService.warning(
+          '🔐 Failed to persist credentials, login continues: $e',
+        );
+      }
 
       // Update state
       _connection = connection;

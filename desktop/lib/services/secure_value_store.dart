@@ -13,15 +13,22 @@ import 'package:pointycastle/export.dart';
 ///
 /// macOS Developer ID builds cannot carry the `keychain-access-groups`
 /// entitlement without a provisioning profile. To keep notarized distribution
-/// launchable, macOS stores values in an app-local encrypted file. Other
-/// platforms continue to use flutter_secure_storage.
+/// launchable, macOS stores values in an app-local encrypted file.
+///
+/// Linux flutter_secure_storage talks to libsecret, which requires a running
+/// Secret Service daemon (gnome-keyring/KWallet). On minimal window managers,
+/// containers, and CI there is no such daemon, and every write throws a
+/// PlatformException — which made `login()` fail even though the network
+/// login itself succeeded. Linux therefore also uses the app-local encrypted
+/// file store. Windows continues to use flutter_secure_storage (DPAPI).
 class SecureValueStore {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   static const String _storeFileName = 'secure_values.json';
   static const String _salt = 'LoveACE desktop local secure store v1';
   static final Random _random = Random.secure();
 
-  static bool get _usesLocalEncryptedStore => Platform.isMacOS;
+  static bool get _usesLocalEncryptedStore =>
+      Platform.isMacOS || Platform.isLinux;
 
   static Future<void> write({
     required String key,
