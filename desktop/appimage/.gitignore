@@ -1,0 +1,5 @@
+# Downloaded, sha256-verified build inputs. build-appimage.sh pins these to
+# tagged releases (see APPIMAGE_TOOL_SHA256 / RUNTIME_SHA256) and re-downloads
+# them when the digest does not match, so they must never be committed.
+appimagetool-x86_64.AppImage
+runtime-x86_64
